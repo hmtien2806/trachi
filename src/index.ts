@@ -89,6 +89,11 @@ init().then(async (context) => {
         server.emit(`transaction:${signature}`, { status: 'failed', message: handleTransactionError(error) })
     })
 
+    context.raydiumAmmV4Pool.on('new', (pool) => {
+        server.emit('newPool', toJson(pool))
+    })
+
+    server.addEvent('newPool')
     server.addEvent((name, { wallet }) => name.startsWith('balance:') && name.split(':')[1] === wallet.address.toString())
     server.addEvent((name, { wallet }) => name.startsWith('tokenAccounts:') && name.split(':')[1] === wallet.address.toString())
     server.addEvent((name) => name.startsWith('reserves:') && isPublicKey(name.split(':')[1]))
