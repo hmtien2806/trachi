@@ -1,6 +1,7 @@
 import { isNullish } from '@kdt310722/utils/common'
 import { Emitter } from '@kdt310722/utils/event'
 import { type PromiseLock, createLock } from '@kdt310722/utils/promise'
+import { Price, TOKEN_PROGRAM_ID, Token } from '@raydium-io/raydium-sdk'
 import type { Connection, PublicKey } from '@solana/web3.js'
 import type BN from 'bn.js'
 import type { PublicKeyLike } from '../../../types/entities'
@@ -28,14 +29,28 @@ export class RaydiumAmmV4Liquidity extends Emitter<RaydiumAmmV4LiquidityEvents> 
     protected readonly lockers: Record<string, PromiseLock>
     protected readonly reserves: Map<string, Reserves>
     protected readonly cacheOnly = true
+    protected readonly tokens: Record<string, Token>
 
     public constructor(protected readonly context: RaydiumAmmV4LiquidityContext, protected readonly connection: Connection) {
         super()
 
         this.lockers = {}
         this.reserves = new Map()
+        this.tokens = {}
 
         this.registerListeners()
+    }
+
+    public async getPrice(id: PublicKeyLike) {
+        return this.calculatePrice(id, await this.get(id))
+    }
+
+    public async calculatePrice(id: PublicKeyLike, reserves: Reserves) {
+        const pool = await this.context.pool.findOrFail(id)
+        const baseToken = this.tokens[pool.baseMint.toString()] ??= new Token(TOKEN_PROGRAM_ID, pool.baseMint, pool.baseDecimals)
+        const quoteToken = this.tokens[pool.quoteMint.toString()] ??= new Token(TOKEN_PROGRAM_ID, pool.quoteMint, pool.quoteDecimals)
+
+        return new Price(baseToken, reserves.base, quoteToken, reserves.quote)
     }
 
     public async get(poolId: PublicKeyLike) {
