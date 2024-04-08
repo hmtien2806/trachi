@@ -3,6 +3,7 @@ import { type Logger, highlight } from '@kdt310722/logger'
 import { JsonRpcError, RpcWebSocketServer, createErrorResponse, createResponseMessage, isJsonRpcMessage, isJsonRpcRequestMessage } from '@kdt310722/rpc'
 import { isArray } from '@kdt310722/utils/array'
 import { tap } from '@kdt310722/utils/function'
+import { isInProduction } from '@kdt310722/utils/node'
 import { type AnyObject, isObject } from '@kdt310722/utils/object'
 import { createDeferred } from '@kdt310722/utils/promise'
 import cors from 'cors'
@@ -72,6 +73,7 @@ export function createRpcServer(context: Context) {
     const wsServer = new WebSocketServer({ noServer: true, path: '/' })
 
     const server = new RpcWebSocketServer({
+        heartbeat: isInProduction(),
         batchSize: config.server.batchSize,
         exceptionHandler: (error) => exceptionHandler(logger, error),
         onClientError: (error) => {

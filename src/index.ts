@@ -19,6 +19,7 @@ import { createLoginHandler } from './rpc-methods/login'
 import { createFindPoolKeysByPairHandler } from './rpc-methods/raydium/find-pool-keys-by-mint'
 import { createGetPoolKeysHandler } from './rpc-methods/raydium/get-pool-keys'
 import { createGetReservesHandler } from './rpc-methods/raydium/get-reserves'
+import { createGetWsolPriceHandler } from './rpc-methods/raydium/get-wsol-price'
 import { createRegisterHandler } from './rpc-methods/register'
 import { createGetAvailableSendersHandler } from './rpc-methods/sender'
 import { createGetTokenHandler } from './rpc-methods/tokens/get-token'
@@ -66,6 +67,7 @@ init().then(async (context) => {
     server.addRpcMethod('raydium_getPoolKeys', createGetPoolKeysHandler())
     server.addRpcMethod('raydium_getReserves', createGetReservesHandler())
     server.addRpcMethod('raydium_findPoolKeysByPair', createFindPoolKeysByPairHandler())
+    server.addRpcMethod('raydium_getWsolPrice', createGetWsolPriceHandler())
 
     context.account.balance.on('update', (account, balance) => {
         server.emit(`balance:${account.toString()}`, balance)
@@ -95,7 +97,12 @@ init().then(async (context) => {
         server.emit('newPool', toJson(pool))
     })
 
+    context.raydiumAmmV4Liquidity.on('wsolPrice', (price) => {
+        server.emit('wsolPrice', price.toFixed())
+    })
+
     server.addEvent('newPool')
+    server.addEvent('wsolPrice')
     server.addEvent((name, { wallet }) => isValidName(name, 'balance', (i) => i === wallet.address.toString()))
     server.addEvent((name, { wallet }) => isValidName(name, 'tokenAccounts', (i) => i === wallet.address.toString()))
     server.addEvent((name) => isValidName(name, 'reserves', (i) => isPublicKey(i)))

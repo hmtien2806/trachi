@@ -4,6 +4,7 @@ import { type PromiseLock, createLock } from '@kdt310722/utils/promise'
 import { Price, TOKEN_PROGRAM_ID, Token } from '@raydium-io/raydium-sdk'
 import type { Connection, PublicKey } from '@solana/web3.js'
 import type BN from 'bn.js'
+import { config } from '../../../config/config'
 import type { PublicKeyLike } from '../../../types/entities'
 import type { OpenOrders, OpenOrdersEntity } from '../../open-orders'
 import type { RaydiumAmmV4Pool, RaydiumAmmV4PoolEntity } from './pool'
@@ -22,7 +23,8 @@ export interface Reserves {
 }
 
 export type RaydiumAmmV4LiquidityEvents = {
-    update: (pool: Required<RaydiumAmmV4PoolEntity>, reserves: Reserves) => void
+    'update': (pool: Required<RaydiumAmmV4PoolEntity>, reserves: Reserves) => void
+    'wsolPrice': (price: Price) => void
 }
 
 export class RaydiumAmmV4Liquidity extends Emitter<RaydiumAmmV4LiquidityEvents> {
@@ -30,6 +32,8 @@ export class RaydiumAmmV4Liquidity extends Emitter<RaydiumAmmV4LiquidityEvents> 
     protected readonly reserves: Map<string, Reserves>
     protected readonly cacheOnly = true
     protected readonly tokens: Record<string, Token>
+
+    protected wsolPrice?: Price
 
     public constructor(protected readonly context: RaydiumAmmV4LiquidityContext, protected readonly connection: Connection) {
         super()
@@ -41,12 +45,25 @@ export class RaydiumAmmV4Liquidity extends Emitter<RaydiumAmmV4LiquidityEvents> 
         this.registerListeners()
     }
 
-    public async getPrice(id: PublicKeyLike) {
-        return this.calculatePrice(id, await this.get(id))
+    public async getWsolPrice() {
+        if (this.wsolPrice) {
+            return this.wsolPrice
+        }
+
+        const price = await this.getPrice(config.chain.wsolPool)
+
+        if (!this.wsolPrice) {
+            this.wsolPrice = price
+        }
+
+        return price
     }
 
-    public async calculatePrice(id: PublicKeyLike, reserves: Reserves) {
-        const pool = await this.context.pool.findOrFail(id)
+    public async getPrice(id: PublicKeyLike) {
+        return this.calculatePrice(await this.context.pool.findOrFail(id), await this.get(id))
+    }
+
+    public calculatePrice(pool: RaydiumAmmV4PoolEntity, reserves: Reserves) {
         const baseToken = this.tokens[pool.baseMint.toString()] ??= new Token(TOKEN_PROGRAM_ID, pool.baseMint, pool.baseDecimals)
         const quoteToken = this.tokens[pool.quoteMint.toString()] ??= new Token(TOKEN_PROGRAM_ID, pool.quoteMint, pool.quoteDecimals)
 
@@ -85,13 +102,18 @@ export class RaydiumAmmV4Liquidity extends Emitter<RaydiumAmmV4LiquidityEvents> 
         const previousReserves = this.reserves.get(id)
         const base = baseVaultTokenAmount.add(openOrders.baseTokenTotal.sub(pool.baseNeedTakePnl))
         const quote = quoteVaultTokenAmount.add(openOrders.quoteTokenTotal.sub(pool.quoteNeedTakePnl))
+        const reserves = { base, quote, source }
 
         if (previousReserves && base.eq(previousReserves.base) && quote.eq(previousReserves.quote)) {
             return
         }
 
-        this.reserves.set(id, { base, quote, source })
-        this.emit('update', pool, { base, quote, source })
+        this.reserves.set(id, reserves)
+        this.emit('update', pool, reserves)
+
+        if (id === config.chain.wsolPool) {
+            this.emit('wsolPrice', this.wsolPrice = this.calculatePrice(pool, reserves))
+        }
     }
 
     protected async onPoolUpdate(pool: RaydiumAmmV4PoolEntity) {
