@@ -24,9 +24,11 @@ import { createGetAvailableSendersHandler } from './rpc-methods/sender'
 import { createGetTokenHandler } from './rpc-methods/tokens/get-token'
 import { createGetTokensHandler } from './rpc-methods/tokens/get-tokens'
 import type { Context } from './types/context'
+import { isValidName } from './utils/events'
 import { toJson } from './utils/json'
 import { isPublicKey } from './utils/public-key'
 import { handleTransactionError } from './utils/transactions/handle-transaction-error'
+import { isValidSignature } from './utils/transactions/is-valid-signature'
 
 const common = new Common(connection)
 const account = new Account(connection)
@@ -94,10 +96,10 @@ init().then(async (context) => {
     })
 
     server.addEvent('newPool')
-    server.addEvent((name, { wallet }) => name.startsWith('balance:') && name.split(':')[1] === wallet.address.toString())
-    server.addEvent((name, { wallet }) => name.startsWith('tokenAccounts:') && name.split(':')[1] === wallet.address.toString())
-    server.addEvent((name) => name.startsWith('reserves:') && isPublicKey(name.split(':')[1]))
-    server.addEvent((name) => name.startsWith('transaction:') && !!name.split(':')[1]?.length)
+    server.addEvent((name, { wallet }) => isValidName(name, 'balance', (i) => i === wallet.address.toString()))
+    server.addEvent((name, { wallet }) => isValidName(name, 'tokenAccounts', (i) => i === wallet.address.toString()))
+    server.addEvent((name) => isValidName(name, 'reserves', (i) => isPublicKey(i)))
+    server.addEvent((name) => isValidName(name, 'transaction', (i) => isValidSignature(i)))
 
     await server.start()
 })
