@@ -22,7 +22,7 @@
         "@bloxroute/solana-trader-client-ts": "^2.1.0",
         "@kdt310722/config": "^0.0.2",
         "@kdt310722/logger": "^0.0.5",
-        "@kdt310722/rpc": "^0.0.11",
+        "@kdt310722/rpc": "^0.0.12",
         "@kdt310722/utils": "^0.0.6",
         "@metaplex-foundation/mpl-token-metadata": "^3.2.1",
         "@metaplex-foundation/umi": "^0.9.1",
