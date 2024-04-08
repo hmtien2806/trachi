@@ -5,6 +5,7 @@ import { isArray } from '@kdt310722/utils/array'
 import { tap } from '@kdt310722/utils/function'
 import { type AnyObject, isObject } from '@kdt310722/utils/object'
 import { createDeferred } from '@kdt310722/utils/promise'
+import cors from 'cors'
 import express, { text, urlencoded } from 'express'
 import { rateLimit } from 'express-rate-limit'
 import helmet from 'helmet'
@@ -101,6 +102,7 @@ export function createRpcServer(context: Context) {
     })
 
     app.use(helmet())
+    app.use(cors({ origin: config.server.corsOrigins }))
     app.use(rateLimit({ windowMs: 1000, limit: config.server.maxRequestsPerSecond, message: createErrorResponse(null, new JsonRpcError(-32_600, 'Rate limit exceeded')) }))
     app.use(text({ type: 'application/json' }))
     app.use(urlencoded({ extended: true }))
