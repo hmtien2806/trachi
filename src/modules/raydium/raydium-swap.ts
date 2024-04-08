@@ -4,16 +4,16 @@ import { tap } from '@kdt310722/utils/function'
 import { format } from '@kdt310722/utils/number'
 import { Liquidity, type LiquidityPoolKeysV4 } from '@raydium-io/raydium-sdk'
 import { ComputeBudgetProgram, type Connection, type SignatureResult } from '@solana/web3.js'
-import { ZERO } from '../constants'
-import { createChildLogger } from '../core/logger'
-import { TransactionConfirmFailed } from '../errors/transaction-confirm-failed'
-import type { BigNumberish, PublicKeyLike } from '../types/entities'
-import { toBN } from '../utils/numbers'
-import { getSwapTokens } from '../utils/swaps/get-swap-tokens'
-import { getUserKeys } from '../utils/swaps/get-user-keys'
-import type { Wallet } from './account/common/wallet'
-import type { Common } from './common'
-import type { Sender } from './sender/sender'
+import { ZERO } from '../../constants'
+import { createChildLogger } from '../../core/logger'
+import { TransactionConfirmFailed } from '../../errors/transaction-confirm-failed'
+import type { BigNumberish, PublicKeyLike } from '../../types/entities'
+import { toBN } from '../../utils/numbers'
+import { getSwapTokens } from '../../utils/swaps/get-swap-tokens'
+import { getUserKeys } from '../../utils/swaps/get-user-keys'
+import type { Wallet } from '../account/common/wallet'
+import type { Common } from '../common'
+import type { Sender } from '../sender/sender'
 
 export interface CreateSwapInstructionsParams {
     useWsol?: boolean
@@ -36,7 +36,7 @@ export type SwapEvents = {
     'failed': (signature: string, error: Error) => void
 }
 
-export class Swap extends Emitter<SwapEvents> {
+export class RaydiumSwap extends Emitter<SwapEvents> {
     protected readonly common: Common
     protected readonly logger: Logger
 

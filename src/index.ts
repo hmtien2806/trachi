@@ -6,20 +6,20 @@ import { Account } from './modules/account/account'
 import { Common } from './modules/common'
 import { Market } from './modules/market'
 import { OpenOrders } from './modules/open-orders'
+import { RaydiumSwap } from './modules/raydium/raydium-swap'
 import { RaydiumAmmV4Liquidity } from './modules/raydium/v4/liquidity'
 import { RaydiumAmmV4Pool } from './modules/raydium/v4/pool'
 import { RaydiumAmmV4Vault } from './modules/raydium/v4/vault'
 import { SenderManager } from './modules/sender/manager'
-import { Swap } from './modules/swap'
 import { Token } from './modules/token'
 import { createGetBalanceHandler } from './rpc-methods/accounts/get-balance'
 import { createGetTokenAccountsHandler } from './rpc-methods/accounts/get-token-accounts'
-import { createSwapHandler } from './rpc-methods/accounts/swap'
 import { createLoginHandler } from './rpc-methods/login'
 import { createFindPoolKeysByPairHandler } from './rpc-methods/raydium/find-pool-keys-by-mint'
 import { createGetPoolKeysHandler } from './rpc-methods/raydium/get-pool-keys'
 import { createGetReservesHandler } from './rpc-methods/raydium/get-reserves'
 import { createGetWsolPriceHandler } from './rpc-methods/raydium/get-wsol-price'
+import { createSwapHandler } from './rpc-methods/raydium/swap'
 import { createRegisterHandler } from './rpc-methods/register'
 import { createGetAvailableSendersHandler } from './rpc-methods/sender'
 import { createGetTokenHandler } from './rpc-methods/tokens/get-token'
@@ -38,7 +38,7 @@ const openOrders = new OpenOrders(connection)
 const raydiumAmmV4Pool = new RaydiumAmmV4Pool(connection, market)
 const raydiumAmmV4Vault = new RaydiumAmmV4Vault(connection)
 const raydiumAmmV4Liquidity = new RaydiumAmmV4Liquidity({ pool: raydiumAmmV4Pool, openOrders, vault: raydiumAmmV4Vault }, connection)
-const swap = new Swap(connection, common)
+const swap = new RaydiumSwap(connection, common)
 const senderManager = new SenderManager()
 const token = new Token()
 
@@ -63,7 +63,7 @@ init().then(async (context) => {
     server.addRpcMethod('auth_register', createRegisterHandler())
     server.addRpcMethod('account_getBalance', createGetBalanceHandler())
     server.addRpcMethod('account_getTokenAccounts', createGetTokenAccountsHandler())
-    server.addRpcMethod('account_swap', createSwapHandler())
+    server.addRpcMethod('raydium_swap', createSwapHandler())
     server.addRpcMethod('raydium_getPoolKeys', createGetPoolKeysHandler())
     server.addRpcMethod('raydium_getReserves', createGetReservesHandler())
     server.addRpcMethod('raydium_findPoolKeysByPair', createFindPoolKeysByPairHandler())
