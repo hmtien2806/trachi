@@ -1,0 +1,31 @@
+import { z } from 'zod'
+import { publicKey } from './public-key'
+
+export const poolKeysV4 = z.object({
+    id: publicKey,
+    baseMint: publicKey,
+    quoteMint: publicKey,
+    lpMint: publicKey,
+    baseDecimals: z.number(),
+    quoteDecimals: z.number(),
+    lpDecimals: z.number(),
+    version: z.literal(4),
+    programId: publicKey,
+    authority: publicKey,
+    openOrders: publicKey,
+    targetOrders: publicKey,
+    baseVault: publicKey,
+    quoteVault: publicKey,
+    withdrawQueue: publicKey,
+    lpVault: publicKey,
+    marketVersion: z.literal(3),
+    marketProgramId: publicKey,
+    marketId: publicKey,
+    marketAuthority: publicKey,
+    marketBaseVault: publicKey,
+    marketQuoteVault: publicKey,
+    marketBids: publicKey,
+    marketAsks: publicKey,
+    marketEventQueue: publicKey,
+    lookupTableAccount: publicKey,
+})

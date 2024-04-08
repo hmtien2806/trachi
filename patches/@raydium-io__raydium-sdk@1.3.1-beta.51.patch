@@ -1,0 +1,21 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+deleted file mode 100644
+index cfd64b9be037891046c977484c5d49d0b2c183e4..0000000000000000000000000000000000000000
+diff --git a/package.json b/package.json
+index 84da1b1b030538d8d566710fe3252342e03d1afb..d392b5de733f49c27264ea5351517b93ef03677f 100644
+--- a/package.json
++++ b/package.json
+@@ -8,11 +8,11 @@
+     "src"
+   ],
+   "main": "./lib/cjs/index.js",
+-  "module": "./lib/esm/index.js",
++  "module": "./lib/cjs/index.js",
+   "types": "./lib/types/index.d.ts",
+   "exports": {
+     "require": "./lib/cjs/index.js",
+-    "import": "./lib/esm/index.js",
++    "import": "./lib/cjs/index.js",
+     "types": "./lib/types/index.d.ts"
+   },
+   "repository": "https://github.com/raydium-io/raydium-sdk",
