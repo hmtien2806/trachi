@@ -8,6 +8,13 @@ import { datasource } from '../core/database'
 import { Wallet } from '../entities/wallet'
 import { isPublicKey } from '../utils/public-key'
 
+export function generateAccessToken(address: string) {
+    const expiredAt = Date.now() + config.auth.accessToken.life * 1000
+    const token = jwt.sign({ address }, config.auth.accessToken.secret, { expiresIn: config.auth.accessToken.life })
+
+    return { address, token, expiredAt }
+}
+
 export function createLoginHandler(): RpcMethod {
     const schema = z.object({
         address: z.string().refine((val) => isPublicKey(val)),
@@ -24,6 +31,6 @@ export function createLoginHandler(): RpcMethod {
             throw new JsonRpcError(-32_000, 'Invalid address or password')
         }
 
-        return { address, token: jwt.sign({ address }, config.auth.accessToken.secret, { expiresIn: config.auth.accessToken.life }) }
+        return generateAccessToken(address)
     }
 }

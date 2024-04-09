@@ -3,12 +3,12 @@ import { tryCatch } from '@kdt310722/utils/function'
 import { Keypair } from '@solana/web3.js'
 import bcrypt from 'bcrypt'
 import bs58 from 'bs58'
-import jwt from 'jsonwebtoken'
 import { z } from 'zod'
 import type { RpcMethod } from '../common/rpc'
 import { config } from '../config/config'
 import { datasource } from '../core/database'
 import { Wallet } from '../entities/wallet'
+import { generateAccessToken } from './login'
 
 export function parsePrivateKey(privateKey: string) {
     return tryCatch(() => Keypair.fromSecretKey(bs58.decode(privateKey)), null)
@@ -47,6 +47,6 @@ export function createRegisterHandler(): RpcMethod {
             await repository.save(wallet)
         })
 
-        return { address: wallet.address, token: jwt.sign({ address: wallet.address }, config.auth.accessToken.secret, { expiresIn: config.auth.accessToken.life }) }
+        return generateAccessToken(wallet.address.toString())
     }
 }
