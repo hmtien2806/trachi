@@ -60,7 +60,8 @@ export class RaydiumAmmV4Pool extends Emitter<RaydiumAmmV4Events> {
         return this.pools.has(id.toString())
     }
 
-    public async getPoolKeys(pubkey: PublicKeyLike) {
+    public async getPoolKeys(pubkeyOrPool: PublicKeyLike | BaseRaydiumAmmV4Pool) {
+        const pubkey = pubkeyOrPool instanceof BaseRaydiumAmmV4Pool ? pubkeyOrPool.id : pubkeyOrPool
         const id = pubkey.toString()
         const poolKeys = this.poolKeys.get(id)
 
@@ -68,7 +69,7 @@ export class RaydiumAmmV4Pool extends Emitter<RaydiumAmmV4Events> {
             return poolKeys
         }
 
-        const pool = await this.findOrFail(pubkey)
+        const pool = pubkeyOrPool instanceof BaseRaydiumAmmV4Pool ? pubkeyOrPool : await this.findOrFail(pubkey)
         const market = await this.market.findOrFail(pool.marketId)
 
         return tap(formatRaydiumAmmV4PoolKeys(pool, market), (result) => {

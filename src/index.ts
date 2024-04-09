@@ -94,7 +94,7 @@ init().then(async (context) => {
     })
 
     context.raydiumAmmV4Pool.on('new', (pool) => {
-        server.emit('newPool', toJson(pool))
+        server.emit('newPool', toJson(context.raydiumAmmV4Pool.getPoolKeys(pool)))
     })
 
     context.raydiumAmmV4Liquidity.on('wsolPrice', (price) => {
