@@ -61,7 +61,7 @@ async function handleRequest(message: AnyObject, context: Context, logger: Logge
             return createResponseMessage(message.id, undefined, err)
         }
 
-        return exceptionHandler(logger, err)
+        return createErrorResponse(message.id, exceptionHandler(logger, err))
     }
 }
 
