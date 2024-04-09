@@ -49,7 +49,7 @@ async function handleRequest(message: AnyObject, context: Context, logger: Logge
     }
 
     if (!publicMethods.has(message.method) && !wallet) {
-        return createErrorResponse(message.id, new JsonRpcError(-32_600, 'Unauthorized'))
+        return createErrorResponse(message.id, new JsonRpcError(-32_401, 'Unauthorized'))
     }
 
     try {

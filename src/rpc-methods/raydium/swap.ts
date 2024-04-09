@@ -23,7 +23,7 @@ export function createSwapHandler(): RpcMethod {
         const _wallet = account.get(wallet.id)
 
         if (!_wallet) {
-            throw new JsonRpcError(-32_000, 'Unauthenticated')
+            throw new JsonRpcError(-32_401, 'Unauthenticated')
         }
 
         return swap.execute({ ...swapParams, poolKeys: swapParams.poolKeys, wallet: _wallet, sender: senderManager.get(swapParams.sender) })
