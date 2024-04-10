@@ -103,6 +103,7 @@ export function createRpcServer(context: Context) {
         })
     })
 
+    app.set('trust proxy', config.server.proxyCount)
     app.use(helmet())
     app.use(cors({ origin: config.server.corsOrigins }))
     app.use(rateLimit({ windowMs: 1000, limit: config.server.maxRequestsPerSecond, message: createErrorResponse(null, new JsonRpcError(-32_600, 'Rate limit exceeded')) }))
