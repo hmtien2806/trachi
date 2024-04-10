@@ -53,7 +53,7 @@ export class Common {
             }
         }
 
-        return poll(update, 30 * 1000)
+        return poll(update, 60 * 1000)
     }
 
     public watchAccountLayoutRentExemption() {
