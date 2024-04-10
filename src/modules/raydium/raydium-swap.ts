@@ -57,7 +57,7 @@ export class RaydiumSwap extends Emitter<SwapEvents> {
 
         if (_priorityFee.gt(ZERO)) {
             instructions.unshift(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: _priorityFee.toNumber() }))
-            instructions.unshift(ComputeBudgetProgram.setComputeUnitLimit({ units: 10 ** 6 }))
+            instructions.unshift(ComputeBudgetProgram.setComputeUnitLimit({ units: 2 * 10 ** 5 }))
         }
 
         const address = highlight(params.wallet.address.toString())
