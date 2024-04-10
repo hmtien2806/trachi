@@ -7,7 +7,7 @@ import { isInProduction } from '@kdt310722/utils/node'
 import { type AnyObject, isObject } from '@kdt310722/utils/object'
 import { createDeferred } from '@kdt310722/utils/promise'
 import cors from 'cors'
-import express, { text, urlencoded } from 'express'
+import express, { type Request, text, urlencoded } from 'express'
 import { rateLimit } from 'express-rate-limit'
 import helmet from 'helmet'
 import { WebSocketServer } from 'ws'
@@ -28,12 +28,12 @@ function exceptionHandler(logger: Logger, error: Error) {
     })
 }
 
-export type RpcMethod = (params: any, context: Context, wallet: Wallet) => Promise<any>
+export type RpcMethod = (params: any, context: Context & { request?: Request }, wallet: Wallet) => Promise<any>
 
 const methods = new Map<string, RpcMethod>()
 const publicMethods = new Set<string>(['auth_login', 'auth_register'])
 
-async function handleRequest(message: AnyObject, context: Context, logger: Logger, wallet?: Wallet) {
+async function handleRequest(message: AnyObject, context: Context, logger: Logger, request: Request, wallet?: Wallet) {
     if (!isJsonRpcMessage(message)) {
         return createErrorResponse(null, new JsonRpcError(-32_600, 'Invalid request'))
     }
@@ -53,7 +53,7 @@ async function handleRequest(message: AnyObject, context: Context, logger: Logge
     }
 
     try {
-        return createResponseMessage(message.id, await method(message.params ?? null, context, wallet!))
+        return createResponseMessage(message.id, await method(message.params ?? null, { ...context, request }, wallet!))
     } catch (error) {
         const err = error instanceof Error ? error : new Error('Unexpected error', { cause: error })
 
@@ -126,10 +126,10 @@ export function createRpcServer(context: Context) {
                 return response.status(400).json(createErrorResponse(null, new JsonRpcError(-32_603, 'Batch size exceeded')))
             }
 
-            return response.json(await Promise.all(request.body.map(async (message) => handleRequest(message, context, logger, wallet!))))
+            return response.json(await Promise.all(request.body.map(async (message) => handleRequest(message, context, logger, request, wallet!))))
         }
 
-        return response.json(await handleRequest({ ...request.query, ...request.body }, context, logger, wallet!))
+        return response.json(await handleRequest({ ...request.query, ...request.body }, context, logger, request, wallet!))
     })
 
     app.all('/', (_, res) => res.status(405).json(createErrorResponse(null, new JsonRpcError(-32_600, 'Used HTTP Method is not allowed. POST is required'))))
@@ -156,6 +156,9 @@ export function createRpcServer(context: Context) {
         methods.set(name, handler)
         server.addMethod(name, async (params: any, { socket }) => handler(params, context, socket['wallet']))
     }
+
+    addRpcMethod('ping', () => Promise.resolve().then(() => 'pong'))
+    addRpcMethod('ip', (_, { request }) => Promise.resolve().then(() => request?.ip ?? 'unknown'))
 
     return Object.assign(server, { start, addRpcMethod })
 }
