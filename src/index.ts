@@ -93,8 +93,8 @@ init().then(async (context) => {
         server.emit(`transaction:${signature}`, { status: 'failed', message: handleTransactionError(error) })
     })
 
-    context.raydiumAmmV4Pool.on('new', (pool) => {
-        server.emit('newPool', toJson(context.raydiumAmmV4Pool.getPoolKeys(pool)))
+    context.raydiumAmmV4Pool.on('new', async (pool) => {
+        server.emit('newPool', toJson(await context.raydiumAmmV4Pool.getPoolKeys(pool)))
     })
 
     context.raydiumAmmV4Liquidity.on('wsolPrice', (price) => {
