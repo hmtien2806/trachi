@@ -56,8 +56,8 @@ export class RaydiumSwap extends Emitter<SwapEvents> {
         const [{ instructions, signers }, latestBlock] = await Promise.all([this.createSwapInstructions(createParams), this.common.getLatestBlock()])
 
         if (_priorityFee.gt(ZERO)) {
-            instructions.unshift(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: _priorityFee.toNumber() }))
-            instructions.unshift(ComputeBudgetProgram.setComputeUnitLimit({ units: 2 * 10 ** 5 }))
+            instructions.unshift(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: _priorityFee.toNumber() * 10 }))
+            instructions.unshift(ComputeBudgetProgram.setComputeUnitLimit({ units: 10 ** 5 }))
         }
 
         const address = highlight(params.wallet.address.toString())
