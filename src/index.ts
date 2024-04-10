@@ -74,11 +74,11 @@ init().then(async (context) => {
     })
 
     context.account.tokenAccount.on('update', (account) => {
-        server.emit(`tokenAccounts:${account.owner.toString()}`, { type: 'update', account: toJson(account) })
+        server.emit(`tokenAccounts:${account.owner.toString()}`, { type: 'update', account: toJson(account.format()) })
     })
 
     context.account.tokenAccount.on('remove', (account) => {
-        server.emit(`tokenAccounts:${account.owner.toString()}`, { type: 'remove', account: toJson(account) })
+        server.emit(`tokenAccounts:${account.owner.toString()}`, { type: 'remove', account: toJson(account.format()) })
     })
 
     context.raydiumAmmV4Liquidity.on('update', (pool, reserves) => {
