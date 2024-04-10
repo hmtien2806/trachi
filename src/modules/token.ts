@@ -68,7 +68,7 @@ export class Token {
 
     protected async save(tokens: Array<TokenEntity | undefined>, metadatas: Array<TokenMetadata | undefined>) {
         const insertTokens = tokens.filter((i) => i && i.mintAuthorityOption !== 0)
-        const insertMetadatas = metadatas.filter((i) => i && i.isMutable && insertTokens.some((j) => j && j.mint.equals(i.mint)))
+        const insertMetadatas = metadatas.filter((i) => i && i.isMutable && insertTokens.some((j) => j && j.mint.toString() === i.mint.toString()))
 
         await upsert(this.repository, insertTokens, { conflictPaths: ['mint'] })
         await upsert(this.metadataRepository, insertMetadatas, { conflictPaths: ['id'] })
