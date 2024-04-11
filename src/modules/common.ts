@@ -66,6 +66,6 @@ export class Common {
             }
         }
 
-        return poll(update, 5 * 60 * 1000)
+        return poll(update, 60 * 60 * 1000)
     }
 }
