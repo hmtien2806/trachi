@@ -27,7 +27,7 @@ export class LiteRpc extends Sender {
         const send = async () => await withRetry(async () => this.connection.sendTransaction(transaction, { skipPreflight: true }), this.retries)
 
         return tap(await send(), (signature) => {
-            const stop = poll(async () => send(), 100)
+            const stop = poll(async () => send().catch((error) => this.logger.error(error)), 100)
             const timer = setTimeout(() => this.emit('confirm', signature), 30 * 1000)
 
             const onConfirm = (tx: string) => {

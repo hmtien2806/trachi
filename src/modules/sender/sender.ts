@@ -1,6 +1,7 @@
 import { Emitter } from '@kdt310722/utils/event'
 import { type Keypair, type PublicKey, type Signer, SystemProgram, type TransactionInstruction, type VersionedTransaction } from '@solana/web3.js'
 import type BN from 'bn.js'
+import { createChildLogger } from '../../core/logger'
 
 export interface BuildTransactionParams {
     payer: PublicKey
@@ -23,6 +24,8 @@ export type SenderEvents = {
 
 export abstract class Sender extends Emitter<SenderEvents> {
     public abstract readonly features: SenderFeatures
+
+    protected readonly logger = createChildLogger('app:modules:sender')
 
     public abstract buildTransaction(params: BuildTransactionParams): VersionedTransaction
 

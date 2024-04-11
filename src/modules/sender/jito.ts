@@ -1,3 +1,6 @@
+import { highlight } from '@kdt310722/logger'
+import { tap } from '@kdt310722/utils/function'
+import { createDeferred, poll } from '@kdt310722/utils/promise'
 import { TxVersion } from '@raydium-io/raydium-sdk'
 import { Connection, PublicKey, type VersionedTransaction } from '@solana/web3.js'
 import { config } from '../../config/config'
@@ -8,14 +11,14 @@ import { type BuildTransactionParams, Sender } from './sender'
 export class Jito extends Sender {
     public readonly features = { name: 'Jito', tip: true, antiMev: false }
 
-    protected readonly connection: Connection
+    protected readonly connections: Connection[]
     protected readonly tipAccount: PublicKey
 
     public constructor() {
         super()
 
         this.tipAccount = new PublicKey(config.jito.tipAccount)
-        this.connection = new Connection(new URL('/api/v1/transactions', config.jito.blockEngineUrl).href, { commitment: 'confirmed', disableRetryOnRateLimit: true })
+        this.connections = config.jito.blockEngineUrls.map((i) => new Connection(new URL('/api/v1/transactions', i).href, { commitment: 'confirmed', disableRetryOnRateLimit: true }))
     }
 
     public buildTransaction(params: BuildTransactionParams) {
@@ -29,6 +32,58 @@ export class Jito extends Sender {
     }
 
     public async sendTransaction(transaction: VersionedTransaction) {
-        return this.connection.sendTransaction(transaction, { skipPreflight: true })
+        const execute = async () => {
+            const signature = createDeferred<string>()
+            const requests: Array<Promise<string>> = []
+
+            for (const connection of this.connections) {
+                this.logger.debug(`Sending transaction to ${highlight(connection.rpcEndpoint)}...`)
+
+                const request = connection.sendTransaction(transaction, { skipPreflight: true })
+
+                request.then((tx) => {
+                    if (!signature.isSettled) {
+                        signature.resolve(tx)
+                    }
+
+                    signature.then((sign) => {
+                        if (sign !== tx) {
+                            this.logger.warn(`${highlight(connection.rpcEndpoint)} returned a different signature: ${highlight(tx)} !== ${highlight(sign)}`)
+                        }
+                    })
+                })
+
+                request.catch((error) => {
+                    this.logger.error(`Unable to send transaction to ${highlight(connection.rpcEndpoint)}`, error)
+                })
+
+                requests.push(request)
+            }
+
+            Promise.allSettled(requests).then(() => {
+                this.logger.debug('Transaction sent to all connections')
+
+                if (!signature.isSettled) {
+                    signature.reject(new Error('All connections failed to send transaction'))
+                }
+            })
+
+            return signature
+        }
+
+        return tap(await execute(), (signature) => {
+            const stop = poll(async () => execute().catch((error) => this.logger.error(error)), 300)
+            const timer = setTimeout(() => this.emit('confirm', signature), 30 * 1000)
+
+            const onConfirm = (tx: string) => {
+                if (tx === signature) {
+                    clearTimeout(timer)
+                    stop()
+                    this.off('confirm', onConfirm)
+                }
+            }
+
+            this.on('confirm', onConfirm)
+        })
     }
 }
