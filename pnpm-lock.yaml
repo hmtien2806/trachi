@@ -22,6 +22,9 @@ dependencies:
   '@kdt310722/rpc':
     specifier: ^0.0.12
     version: 0.0.12(@kdt310722/utils@0.0.6)(ws@8.16.0)
+  '@kdt310722/syndica-chainstream-sdk':
+    specifier: ^0.0.3
+    version: 0.0.3(@kdt310722/rpc@0.0.12)(@kdt310722/utils@0.0.6)
   '@kdt310722/utils':
     specifier: ^0.0.6
     version: 0.0.6
@@ -1364,6 +1367,23 @@ packages:
       isows: 1.0.4(ws@8.16.0)
     transitivePeerDependencies:
       - ws
+    dev: false
+
+  /@kdt310722/syndica-chainstream-sdk@0.0.3(@kdt310722/rpc@0.0.12)(@kdt310722/utils@0.0.6):
+    resolution: {integrity: sha512-0LDIeKO1qiDyp8E1e8W1hXFQq9uBhq58P4K99hgSVvnwGiEOFxQ0+RsH8ptvPGB65GnKoWzAt9Ez4xYolH7/7g==}
+    requiresBuild: true
+    peerDependencies:
+      '@kdt310722/rpc': '>=0.0.5<0.1.0'
+      '@kdt310722/utils': '>=0.0.6<0.1.0'
+    dependencies:
+      '@kdt310722/rpc': 0.0.12(@kdt310722/utils@0.0.6)(ws@8.16.0)
+      '@kdt310722/utils': 0.0.6
+      '@solana/web3.js': 1.91.4
+      bs58: 5.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - utf-8-validate
     dev: false
 
   /@kdt310722/tsconfig@1.0.0(typescript@5.4.4):

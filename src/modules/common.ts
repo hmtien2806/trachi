@@ -1,8 +1,12 @@
 import { type Logger, highlight, message } from '@kdt310722/logger'
+import type { SyndicaChainStream } from '@kdt310722/syndica-chainstream-sdk'
+import { tap } from '@kdt310722/utils/function'
 import { poll } from '@kdt310722/utils/promise'
 import { SPL_ACCOUNT_LAYOUT } from '@raydium-io/raydium-sdk'
 import type { Connection } from '@solana/web3.js'
+import { syndica } from '../common/syndica'
 import { createChildLogger } from '../core/logger'
+import { LruSet } from '../utils/lru-set'
 
 export interface RecentBlock {
     blockhash: string
@@ -10,19 +14,28 @@ export interface RecentBlock {
 }
 
 export class Common {
-    protected latestBlock?: RecentBlock
+    protected latestBlock?: RecentBlock & { blockheight: number }
     protected accountLayoutRentExemption?: number
 
     protected readonly connection: Connection
     protected readonly logger: Logger
+    protected readonly syndica: SyndicaChainStream
+    protected readonly recentBlocks = new LruSet<RecentBlock>(140)
 
     public constructor(connection: Connection) {
         this.connection = connection
         this.logger = createChildLogger('app:modules:common')
+        this.syndica = syndica
     }
 
-    public async getLatestBlock() {
-        return this.latestBlock ?? await this.connection.getLatestBlockhash()
+    public async getLatestBlockHash() {
+        let blockhash = this.recentBlocks.size >= 140 ? this.recentBlocks.first() : this.recentBlocks.last()
+
+        if (!blockhash) {
+            blockhash = await this.connection.getLatestBlockhash().then((i) => ({ ...i, lastValidBlockHeight: i.lastValidBlockHeight - 150 }))
+        }
+
+        return tap(blockhash!, (i) => this.logger.debug(message(() => `Using block: ${highlight(i.blockhash)} (${highlight(i.lastValidBlockHeight.toString())}), latest: ${highlight(this.latestBlock?.blockheight.toString() ?? 'N/A')}`)))
     }
 
     public async getAccountLayoutRentExemption() {
@@ -32,7 +45,7 @@ export class Common {
     public async init() {
         const stopLoading = this.logger.createLoading().start('Initializing common module...')
 
-        this.latestBlock = await this.getLatestBlock().finally(() => {
+        await this.getLatestBlockHash().then((i) => this.recentBlocks.add(i)).finally(() => {
             this.watchBlock()
         })
 
@@ -43,17 +56,15 @@ export class Common {
         stopLoading('Common module initialized')
     }
 
-    public watchBlock() {
-        const update = async () => {
-            const block = await this.connection.getLatestBlockhash()
+    public async watchBlock() {
+        this.syndica.on('block', (block) => {
+            const blockhash = { blockhash: block.blockhash, lastValidBlockHeight: block.blockHeight + 150 }
 
-            if (this.latestBlock && this.latestBlock.lastValidBlockHeight <= block.lastValidBlockHeight) {
-                this.latestBlock = block
-                this.logger.debug(message(() => `Updated latest block to ${highlight(block.blockhash)} (last valid block height: ${highlight(block.lastValidBlockHeight.toString())})`))
-            }
-        }
+            this.latestBlock = { ...blockhash, blockheight: block.blockHeight }
+            this.recentBlocks.add(blockhash)
+        })
 
-        return poll(update, 60 * 1000)
+        return this.syndica.subscribeBlock()
     }
 
     public watchAccountLayoutRentExemption() {

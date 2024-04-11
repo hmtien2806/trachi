@@ -53,7 +53,7 @@ export class RaydiumSwap extends Emitter<SwapEvents> {
         const { sender, priorityFee = 0, tip = 0, antiMev = false, ...createParams } = params
         const _priorityFee = toBN(priorityFee)
         const _tip = toBN(tip)
-        const [{ instructions, signers }, latestBlock] = await Promise.all([this.createSwapInstructions(createParams), this.common.getLatestBlock()])
+        const [{ instructions, signers }, latestBlock] = await Promise.all([this.createSwapInstructions(createParams), this.common.getLatestBlockHash()])
 
         if (_priorityFee.gt(ZERO)) {
             instructions.unshift(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: _priorityFee.toNumber() * 10 }))

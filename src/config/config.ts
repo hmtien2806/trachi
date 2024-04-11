@@ -8,9 +8,11 @@ import { liteRpc } from './lite-rpc'
 import { logger } from './logger'
 import { rpc } from './rpc'
 import { server } from './server'
+import { syndica } from './syndica'
 
 export const config = createConfig({
     chain,
+    syndica,
     rpc,
     jito,
     bloXRoute,
