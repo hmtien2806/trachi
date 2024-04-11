@@ -32,35 +32,34 @@ export class Jito extends Sender {
     }
 
     public async sendTransaction(transaction: VersionedTransaction) {
-        const execute = async () => {
+        const execute = async (waitAllComplete = false) => {
             const signature = createDeferred<string>()
-            const requests: Array<Promise<string>> = []
+            const requests: Array<Promise<void>> = []
 
             for (const connection of this.connections) {
                 this.logger.debug(`Sending transaction to ${highlight(connection.rpcEndpoint)}...`)
 
-                const request = connection.sendTransaction(transaction, { skipPreflight: true })
-
-                request.then((tx) => {
-                    if (!signature.isSettled) {
-                        signature.resolve(tx)
-                    }
-
-                    signature.then((sign) => {
-                        if (sign !== tx) {
-                            this.logger.warn(`${highlight(connection.rpcEndpoint)} returned a different signature: ${highlight(tx)} !== ${highlight(sign)}`)
+                const request = connection.sendTransaction(transaction, { skipPreflight: true }).then(
+                    (tx) => {
+                        if (!signature.isSettled) {
+                            signature.resolve(tx)
                         }
-                    })
-                })
 
-                request.catch((error) => {
-                    this.logger.error(`Unable to send transaction to ${highlight(connection.rpcEndpoint)}`, error)
-                })
+                        signature.then((sign) => {
+                            if (sign !== tx) {
+                                this.logger.warn(`${highlight(connection.rpcEndpoint)} returned a different signature: ${highlight(tx)} !== ${highlight(sign)}`)
+                            }
+                        })
+                    },
+                    (error) => {
+                        this.logger.error(`Unable to send transaction to ${highlight(connection.rpcEndpoint)}`, error)
+                    },
+                )
 
                 requests.push(request)
             }
 
-            Promise.allSettled(requests).then(() => {
+            const all = Promise.allSettled(requests).then(() => {
                 this.logger.debug('Transaction sent to all connections')
 
                 if (!signature.isSettled) {
@@ -68,11 +67,15 @@ export class Jito extends Sender {
                 }
             })
 
+            if (waitAllComplete) {
+                await all
+            }
+
             return signature
         }
 
         return tap(await execute(), (signature) => {
-            const stop = poll(async () => execute().catch((error) => this.logger.error(error)), 300)
+            const stop = poll(async () => execute(true).catch((error) => this.logger.error(error)), 500)
             const timer = setTimeout(() => this.emit('confirm', signature), 30 * 1000)
 
             const onConfirm = (tx: string) => {
