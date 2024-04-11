@@ -1,3 +1,4 @@
+import { Emitter } from '@kdt310722/utils/event'
 import { type Keypair, type PublicKey, type Signer, SystemProgram, type TransactionInstruction, type VersionedTransaction } from '@solana/web3.js'
 import type BN from 'bn.js'
 
@@ -16,7 +17,11 @@ export interface SenderFeatures {
     readonly antiMev: boolean
 }
 
-export abstract class Sender {
+export type SenderEvents = {
+    'confirm': (signature: string) => void
+}
+
+export abstract class Sender extends Emitter<SenderEvents> {
     public abstract readonly features: SenderFeatures
 
     public abstract buildTransaction(params: BuildTransactionParams): VersionedTransaction
