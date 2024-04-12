@@ -11,12 +11,14 @@ export class LiteRpc extends Sender {
 
     protected readonly connection: Connection
     protected readonly retries: number
+    protected readonly pollingInterval: number
 
     public constructor() {
         super()
 
         this.connection = new Connection(config.liteRpc.url, { commitment: 'confirmed', disableRetryOnRateLimit: true })
         this.retries = config.liteRpc.retries
+        this.pollingInterval = 100
     }
 
     public buildTransaction(params: BuildTransactionParams) {
@@ -27,7 +29,7 @@ export class LiteRpc extends Sender {
         const send = async () => await withRetry(async () => this.connection.sendTransaction(transaction, { skipPreflight: true }), this.retries)
 
         return tap(await send(), (signature) => {
-            const stop = poll(async () => send().catch((error) => this.logger.error(error)), 100)
+            const stop = poll(async () => send().catch((error) => this.logger.error(error)), this.pollingInterval)
             const timer = setTimeout(() => this.emit('confirm', signature), 30 * 1000)
 
             const onConfirm = (tx: string) => {
