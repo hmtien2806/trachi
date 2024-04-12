@@ -12,6 +12,6 @@ export class Rpc extends LiteRpc {
         super()
 
         this.connection = connection
-        this.pollingInterval = 500
+        this.pollingInterval = 200
     }
 }
