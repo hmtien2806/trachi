@@ -3,7 +3,7 @@ import { Emitter } from '@kdt310722/utils/event'
 import { tap } from '@kdt310722/utils/function'
 import { format } from '@kdt310722/utils/number'
 import { Liquidity, type LiquidityPoolKeysV4 } from '@raydium-io/raydium-sdk'
-import { ComputeBudgetProgram, type Connection, type SignatureResult } from '@solana/web3.js'
+import { ComputeBudgetProgram, type Connection, type PublicKey, type SignatureResult } from '@solana/web3.js'
 import { ZERO } from '../../constants'
 import { createChildLogger } from '../../core/logger'
 import { TransactionConfirmFailed } from '../../errors/transaction-confirm-failed'
@@ -32,8 +32,9 @@ export interface SwapParams extends CreateSwapInstructionsParams {
 }
 
 export type SwapEvents = {
-    'confirmed': (signature: string) => void
-    'failed': (signature: string, error: Error) => void
+    'sent': (payer: PublicKey, signature: string) => void
+    'confirmed': (payer: PublicKey, signature: string) => void
+    'failed': (payer: PublicKey, signature: string, error: Error) => void
 }
 
 export class RaydiumSwap extends Emitter<SwapEvents> {
@@ -67,9 +68,11 @@ export class RaydiumSwap extends Emitter<SwapEvents> {
         const signature = await sender.sendTransaction(transaction, antiMev).then((signature) => tap(signature, () => this.logger.stopTimer(sendTimer, 'info', `Swap transaction for wallet ${address} sent to the blockchain with signature ${highlight(signature)}, waiting for confirmation...`)))
         const confirmTimer = this.logger.createTimer()
 
-        this.connection.confirmTransaction({ signature, ...latestBlock }, 'confirmed').then(({ value }) => this.onTransactionConfirmed(confirmTimer, signature, value, sender)).catch((error) => {
+        this.emit('sent', params.wallet.address, signature)
+
+        this.connection.confirmTransaction({ signature, ...latestBlock }, 'confirmed').then(({ value }) => this.onTransactionConfirmed(confirmTimer, signature, value, sender, params.wallet.address)).catch((error) => {
             sender.emit('confirm', signature)
-            this.emit('failed', signature, error)
+            this.emit('failed', params.wallet.address, signature, error)
             this.logger.stopTimer(confirmTimer, 'error', `Failed to confirm transaction ${highlight(signature)}`, error)
         })
 
@@ -91,14 +94,14 @@ export class RaydiumSwap extends Emitter<SwapEvents> {
         return { instructions, signers: [wallet.keypair, ...signers, ...innerTransaction.signers] }
     }
 
-    protected onTransactionConfirmed(timer: string, signature: string, result: SignatureResult, sender: Sender) {
+    protected onTransactionConfirmed(timer: string, signature: string, result: SignatureResult, sender: Sender, payer: PublicKey) {
         sender.emit('confirm', signature)
 
         if (result.err) {
             throw new TransactionConfirmFailed(result.err)
         }
 
-        this.emit('confirmed', signature)
+        this.emit('confirmed', payer, signature)
         this.logger.stopTimer(timer, 'info', `Transaction ${highlight(signature)} confirmed`)
     }
 

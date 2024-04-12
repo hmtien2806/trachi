@@ -29,7 +29,6 @@ import { isValidName } from './utils/events'
 import { toJson } from './utils/json'
 import { isPublicKey } from './utils/public-key'
 import { handleTransactionError } from './utils/transactions/handle-transaction-error'
-import { isValidSignature } from './utils/transactions/is-valid-signature'
 
 const common = new Common(connection)
 const account = new Account(connection)
@@ -85,12 +84,16 @@ init().then(async (context) => {
         server.emit(`reserves:${pool.id.toString()}`, toJson(reserves))
     })
 
-    context.swap.on('confirmed', (signature) => {
-        server.emit(`transaction:${signature}`, { status: 'confirmed', message: 'Transaction confirmed' })
+    context.swap.on('sent', (payer, signature) => {
+        server.emit(`transactions:${payer.toString()}`, { status: 'sent', signature, message: 'Transaction sent' })
     })
 
-    context.swap.on('failed', (signature, error) => {
-        server.emit(`transaction:${signature}`, { status: 'failed', message: handleTransactionError(error) })
+    context.swap.on('confirmed', (payer, signature) => {
+        server.emit(`transactions:${payer.toString()}`, { status: 'confirmed', signature, message: 'Transaction confirmed' })
+    })
+
+    context.swap.on('failed', (payer, signature, error) => {
+        server.emit(`transactions:${payer.toString()}`, { status: 'failed', signature, message: handleTransactionError(error) })
     })
 
     context.raydiumAmmV4Pool.on('new', async (pool) => {
@@ -105,8 +108,8 @@ init().then(async (context) => {
     server.addEvent('wsolPrice')
     server.addEvent((name, { wallet }) => isValidName(name, 'balance', (i) => i === wallet.address.toString()))
     server.addEvent((name, { wallet }) => isValidName(name, 'tokenAccounts', (i) => i === wallet.address.toString()))
+    server.addEvent((name, { wallet }) => isValidName(name, 'transactions', (i) => i === wallet.address.toString()))
     server.addEvent((name) => isValidName(name, 'reserves', (i) => isPublicKey(i)))
-    server.addEvent((name) => isValidName(name, 'transaction', (i) => isValidSignature(i)))
 
     await server.start()
 })
