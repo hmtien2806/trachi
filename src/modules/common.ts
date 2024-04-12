@@ -5,6 +5,7 @@ import { poll } from '@kdt310722/utils/promise'
 import { SPL_ACCOUNT_LAYOUT } from '@raydium-io/raydium-sdk'
 import type { Connection } from '@solana/web3.js'
 import { syndica } from '../common/syndica'
+import { config } from '../config/config'
 import { createChildLogger } from '../core/logger'
 import { LruSet } from '../utils/lru-set'
 
@@ -20,16 +21,17 @@ export class Common {
     protected readonly connection: Connection
     protected readonly logger: Logger
     protected readonly syndica: SyndicaChainStream
-    protected readonly recentBlocks = new LruSet<RecentBlock>(140)
+    protected readonly recentBlocks: LruSet<RecentBlock>
 
     public constructor(connection: Connection) {
         this.connection = connection
         this.logger = createChildLogger('app:modules:common')
         this.syndica = syndica
+        this.recentBlocks = new LruSet<RecentBlock>(config.chain.maxRecentBlockHashes)
     }
 
     public async getLatestBlockHash() {
-        let blockhash = this.recentBlocks.size >= 140 ? this.recentBlocks.first() : this.recentBlocks.last()
+        let blockhash = this.recentBlocks.size >= config.chain.maxRecentBlockHashes ? this.recentBlocks.first() : this.recentBlocks.last()
 
         if (!blockhash) {
             blockhash = await this.connection.getLatestBlockhash().then((i) => ({ ...i, lastValidBlockHeight: i.lastValidBlockHeight - 150 }))
