@@ -15,7 +15,7 @@ export function createSwapHandler(): RpcMethod {
         priorityFee: z.union([z.string(), z.number()]),
         tip: z.union([z.string(), z.number()]),
         antiMev: z.boolean().default(false),
-        sender: z.enum(SUPPORTED_SENDERS).default('bloXRoute'),
+        sender: z.enum([...SUPPORTED_SENDERS, 'combined']).default('bloXRoute'),
     })
 
     return async (params, { swap, account, senderManager }, wallet) => {
