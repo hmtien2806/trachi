@@ -52,7 +52,7 @@ export class Jito extends Sender {
                         })
                     },
                     (error) => {
-                        this.logger.error(`Unable to send transaction to ${highlight(connection.rpcEndpoint)}`, error)
+                        this.logger.warn(`Unable to send transaction to ${highlight(connection.rpcEndpoint)}`, error)
                     },
                 )
 
@@ -75,7 +75,7 @@ export class Jito extends Sender {
         }
 
         return tap(await execute(), (signature) => {
-            const stop = poll(async () => execute(true).catch((error) => tap(this.logger.error(error), () => this.emit('confirm', signature))), 500)
+            const stop = poll(async () => execute(true).catch((error) => tap(this.logger.warn(error), () => this.emit('confirm', signature))), 500)
             const timer = setTimeout(() => this.emit('confirm', signature), 5 * 1000)
 
             const onConfirm = (tx: string) => {
