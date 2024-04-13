@@ -26,6 +26,8 @@ export function createSwapHandler(): RpcMethod {
             throw new JsonRpcError(-32_401, 'Unauthenticated')
         }
 
-        return swap.execute({ ...swapParams, poolKeys: swapParams.poolKeys, wallet: _wallet, sender: senderManager.get(swapParams.sender) })
+        return swap.execute({ ...swapParams, poolKeys: swapParams.poolKeys, wallet: _wallet, sender: senderManager.get(swapParams.sender) }).catch((error) => {
+            throw new JsonRpcError(-32_000, error.message)
+        })
     }
 }
