@@ -1,5 +1,5 @@
 import { tap } from '@kdt310722/utils/function'
-import { poll, withRetry } from '@kdt310722/utils/promise'
+import { poll, withRetry, withTimeout } from '@kdt310722/utils/promise'
 import { TxVersion } from '@raydium-io/raydium-sdk'
 import { Connection, type VersionedTransaction } from '@solana/web3.js'
 import { config } from '../../config/config'
@@ -26,11 +26,11 @@ export class LiteRpc extends Sender {
     }
 
     public async sendTransaction(transaction: VersionedTransaction) {
-        const send = async () => await withRetry(async () => this.connection.sendTransaction(transaction, { skipPreflight: true }), this.retries)
+        const send = async () => await withRetry(async () => withTimeout(this.connection.sendTransaction(transaction, { skipPreflight: true }), 1000, `Timeout when send transaction to RPC`), this.retries)
 
         return tap(await send(), (signature) => {
             const stop = poll(async () => send().catch((error) => this.logger.error(error)), this.pollingInterval)
-            const timer = setTimeout(() => this.emit('confirm', signature), 30 * 1000)
+            const timer = setTimeout(() => this.emit('confirm', signature), 5 * 1000)
 
             const onConfirm = (tx: string) => {
                 if (tx === signature) {

@@ -21,7 +21,7 @@ export class SenderManager {
 
     public constructor() {
         this.senders = map(senders, (name, instance) => [name, new instance()] as const)
-        this.senders['combined'] = new Combined(this.senders['jito'] as Jito, this.senders['rpc'] as Rpc)
+        this.senders['combined'] = new Combined(this.senders['jito'] as Jito, this.senders['rpc'] as Rpc, this.senders['lite-rpc'] as LiteRpc)
     }
 
     public get(id: typeof SUPPORTED_SENDERS[number]) {
