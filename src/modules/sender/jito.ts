@@ -75,7 +75,7 @@ export class Jito extends Sender {
         }
 
         return tap(await execute(), (signature) => {
-            const stop = poll(async () => execute(true).catch((error) => this.logger.error(error)), 500)
+            const stop = poll(async () => execute(true).catch((error) => tap(this.logger.error(error), () => this.emit('confirm', signature))), 500)
             const timer = setTimeout(() => this.emit('confirm', signature), 30 * 1000)
 
             const onConfirm = (tx: string) => {
