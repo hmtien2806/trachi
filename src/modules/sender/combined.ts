@@ -25,7 +25,7 @@ export class Combined extends Sender {
 
         Promise.allSettled([rpc, jito, liteRpc]).then(async () => {
             if (!signature.isSettled) {
-                signature.reject(new AggregateError(await Promise.all([rpc, jito]), 'All senders failed'))
+                signature.reject(new AggregateError(await Promise.all([rpc, jito, liteRpc]), 'All senders failed'))
             }
         })
 
