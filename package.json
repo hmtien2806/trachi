@@ -33,6 +33,7 @@
         "@solana/web3.js": "^1.91.4",
         "bcrypt": "^5.1.1",
         "better-sqlite3": "^9.5.0",
+        "bigint-buffer": "^1.1.5",
         "bn.js": "^5.2.1",
         "bs58": "^5.0.0",
         "colorette": "^2.0.20",
