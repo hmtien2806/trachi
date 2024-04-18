@@ -23,7 +23,7 @@ export class Common {
     }
 
     public async getLatestBlockHash(): Promise<RecentBlock> {
-        return this.recentBlock ?? await this.connection.getLatestBlockhash('finalized')
+        return this.recentBlock ?? await this.connection.getLatestBlockhash('finalized').then(({ blockhash, lastValidBlockHeight }) => ({ blockhash, lastValidBlockHeight: lastValidBlockHeight - 150 }))
     }
 
     public async getAccountLayoutRentExemption() {
@@ -46,7 +46,7 @@ export class Common {
 
     public watchBlock() {
         const update = async () => {
-            const block = await this.connection.getLatestBlockhash('finalized')
+            const block = await this.connection.getLatestBlockhash('finalized').then(({ blockhash, lastValidBlockHeight }) => ({ blockhash, lastValidBlockHeight: lastValidBlockHeight - 150 }))
 
             if (this.recentBlock?.blockhash !== block.blockhash) {
                 this.recentBlock = block
