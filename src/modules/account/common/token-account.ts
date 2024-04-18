@@ -5,6 +5,7 @@ import { tap } from '@kdt310722/utils/function'
 import { shorten } from '@kdt310722/utils/string'
 import { TOKEN_PROGRAM_ID } from '@raydium-io/raydium-sdk'
 import type { AccountInfo, Connection, KeyedAccountInfo } from '@solana/web3.js'
+import PQueue from 'p-queue'
 import type { Repository } from 'typeorm'
 import { datasource } from '../../../core/database'
 import { createChildLogger } from '../../../core/logger'
@@ -21,6 +22,8 @@ export type TokenAccountEvents = {
     'update': (account: TokenAccountEntity) => void
     'remove': (account: TokenAccountEntity) => void
 }
+
+const queue = new PQueue({ concurrency: 1 })
 
 export class TokenAccount extends Emitter<TokenAccountEvents> {
     protected readonly repository: Repository<TokenAccountEntity>
@@ -110,7 +113,7 @@ export class TokenAccount extends Emitter<TokenAccountEvents> {
             this.accountsByOwner.get(owner)!.add(address)
             this.accounts.set(address, entity)
 
-            upsert(this.repository, entity, { conflictPaths: ['id'], conflictType: 'update' }).catch((error) => {
+            queue.add(async () => upsert(this.repository, entity, { conflictPaths: ['id'], conflictType: 'update' })).catch((error) => {
                 this.logger.error(`Failed when saving token account ${address} of owner ${owner}`, error)
             })
         })
