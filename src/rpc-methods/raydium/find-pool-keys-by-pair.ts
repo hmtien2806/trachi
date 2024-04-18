@@ -13,7 +13,7 @@ export function createFindPoolKeysByPairHandler(): RpcMethod {
     return async (params, { raydiumAmmV4Pool, market, raydiumAmmV4Liquidity }) => {
         const [tokenA, tokenB] = schema.parse(params)
 
-        const pools = await raydiumAmmV4Pool.findByPair(tokenA, tokenB).then((pools) => Promise.all(pools.map(async (pool) => {
+        const pools = await raydiumAmmV4Pool.findByPair(tokenA, tokenB, true).then((pools) => Promise.all(pools.map(async (pool) => {
             try {
                 const [poolMarket, reserves] = await Promise.all([
                     market.findOrFail(pool.marketId),

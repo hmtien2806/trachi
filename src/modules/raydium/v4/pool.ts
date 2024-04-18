@@ -77,11 +77,15 @@ export class RaydiumAmmV4Pool extends Emitter<RaydiumAmmV4Events> {
         })
     }
 
-    public async findByPair(tokenA: PublicKeyLike, tokenB: PublicKeyLike) {
+    public async findByPair(tokenA: PublicKeyLike, tokenB: PublicKeyLike, cacheOnly = false) {
         const poolIds = await this.repository.find({ select: ['id', 'baseMint', 'quoteMint'], where: [{ baseMint: tokenA, quoteMint: tokenB }, { baseMint: tokenB, quoteMint: tokenA }] })
 
         if (poolIds.length > 0) {
             return poolIds.map(({ id }) => this.pools.get(id.toString())).filter(notNullish)
+        }
+
+        if (cacheOnly) {
+            return []
         }
 
         const [poolsByBaseMint, poolsByQuoteMint] = await Promise.all([
