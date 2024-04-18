@@ -44,12 +44,12 @@ const senderManager = new SenderManager()
 const token = new Token()
 
 const init = async (): Promise<Context> => {
-    await common.init()
-    await account.init()
     await market.init()
-    await openOrders.init()
     await raydiumAmmV4Pool.init()
+    await openOrders.init()
     await raydiumAmmV4Vault.init()
+    await account.init()
+    await common.init()
 
     return { common, token, account, market, openOrders, raydiumAmmV4Pool, raydiumAmmV4Vault, raydiumAmmV4Liquidity, swap, senderManager }
 }
