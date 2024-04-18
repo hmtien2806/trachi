@@ -1,7 +1,9 @@
 import 'reflect-metadata'
 import './core/database'
+import { highlight } from '@kdt310722/logger'
 import { connection } from './common/connection'
 import { createRpcServer } from './common/rpc'
+import { logger } from './core/logger'
 import { Account } from './modules/account/account'
 import { Common } from './modules/common'
 import { Market } from './modules/market'
@@ -97,7 +99,11 @@ init().then(async (context) => {
     })
 
     context.raydiumAmmV4Pool.on('new', async (pool) => {
-        server.emit('newPool', toJson(await context.raydiumAmmV4Pool.getPoolKeys(pool)))
+        try {
+            server.emit('newPool', toJson(await context.raydiumAmmV4Pool.getPoolKeys(pool)))
+        } catch (error) {
+            logger.error(`Failed to get pool keys: ${highlight(pool.id.toString())}`, error)
+        }
     })
 
     context.raydiumAmmV4Liquidity.on('wsolPrice', (price) => {
