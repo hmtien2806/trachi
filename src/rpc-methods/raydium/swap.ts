@@ -11,6 +11,7 @@ export function createSwapHandler(): RpcMethod {
         poolKeys: poolKeysV4,
         outputToken: publicKey,
         amountIn: z.union([z.string(), z.number()]),
+        amountOut: z.union([z.string(), z.number()]),
         minimumAmountOut: z.union([z.string(), z.number()]),
         priorityFee: z.union([z.string(), z.number()]),
         tip: z.union([z.string(), z.number()]),

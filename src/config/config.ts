@@ -5,6 +5,7 @@ import { database } from './database'
 import { logger } from './logger'
 import { rpc } from './rpc'
 import { server } from './server'
+import { swap } from './swap'
 
 export const config = createConfig({
     chain,
@@ -13,4 +14,5 @@ export const config = createConfig({
     database,
     logger,
     auth,
+    swap,
 })
