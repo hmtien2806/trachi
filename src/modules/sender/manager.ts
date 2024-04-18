@@ -1,16 +1,9 @@
 import type { Constructor } from '@kdt310722/utils/common'
 import { map } from '@kdt310722/utils/object'
-import { BloXRoute } from './blox-route'
-import { Combined } from './combined'
-import { Jito } from './jito'
-import { LiteRpc } from './lite-rpc'
 import { Rpc } from './rpc'
 import type { Sender } from './sender'
 
 const senders: Record<string, Constructor<Sender>> = {
-    'jito': Jito,
-    'bloXRoute': BloXRoute,
-    'lite-rpc': LiteRpc,
     'rpc': Rpc,
 }
 
@@ -21,7 +14,6 @@ export class SenderManager {
 
     public constructor() {
         this.senders = map(senders, (name, instance) => [name, new instance()] as const)
-        this.senders['combined'] = new Combined(this.senders['rpc'] as Rpc, this.senders['lite-rpc'] as LiteRpc)
     }
 
     public get(id: typeof SUPPORTED_SENDERS[number]) {

@@ -19,11 +19,9 @@
         "prepare": "simple-git-hooks"
     },
     "dependencies": {
-        "@bloxroute/solana-trader-client-ts": "^2.1.0",
         "@kdt310722/config": "^0.0.2",
         "@kdt310722/logger": "^0.0.5",
         "@kdt310722/rpc": "^0.0.13",
-        "@kdt310722/syndica-chainstream-sdk": "^0.0.3",
         "@kdt310722/utils": "^0.0.6",
         "@metaplex-foundation/mpl-token-metadata": "^3.2.1",
         "@metaplex-foundation/umi": "^0.9.1",
@@ -33,7 +31,6 @@
         "@solana/web3.js": "^1.91.6",
         "bcrypt": "^5.1.1",
         "better-sqlite3": "^9.5.0",
-        "bigint-buffer": "^1.1.5",
         "bn.js": "^5.2.1",
         "bs58": "^5.0.0",
         "colorette": "^2.0.20",
