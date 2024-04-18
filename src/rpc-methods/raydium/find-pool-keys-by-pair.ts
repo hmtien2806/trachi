@@ -1,5 +1,6 @@
 import { isArray } from '@kdt310722/utils/array'
 import { notNullish } from '@kdt310722/utils/common'
+import { tap } from '@kdt310722/utils/function'
 import type { PublicKey } from '@solana/web3.js'
 import { z } from 'zod'
 import type { RpcMethod } from '../../common/rpc'
@@ -43,6 +44,6 @@ export function createFindPoolKeysByPairHandler(): RpcMethod {
             return request
         }
 
-        return requests.setWithExpire(key, find(tokenA, tokenB, context), 5 * 1000)
+        return tap(find(tokenA, tokenB, context), (i) => requests.setWithExpire(key, i, 5 * 1000))
     }
 }
