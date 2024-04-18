@@ -27,7 +27,7 @@ export class SwapTransaction {
     @Column()
     public declare status: string
 
-    @Column()
+    @Column({ nullable: true })
     public declare signature?: string
 
     @CreateDateColumn()
