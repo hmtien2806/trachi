@@ -110,6 +110,10 @@ export function createRpcServer(context: Context) {
     app.use(text({ type: 'application/json' }))
     app.use(urlencoded({ extended: true }))
 
+    app.use((req, res, next) => {
+        helmet.contentSecurityPolicy({ directives: { connectSrc: ['\'self\'', (req.protocol === 'http' ? 'ws://' : 'wss://') + req.get('host')] } })(req, res, next)
+    })
+
     app.post('/', async (request, response) => {
         const wallet = await authenticate(request.header('authorization')?.split(' ')[1] ?? request.query.token?.toString())
 
