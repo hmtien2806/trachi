@@ -111,7 +111,7 @@ export function createRpcServer(context: Context) {
     app.use(urlencoded({ extended: true }))
 
     app.use((req, res, next) => {
-        helmet.contentSecurityPolicy({ directives: { connectSrc: ['\'self\'', (req.protocol === 'http' ? 'ws://' : 'wss://') + req.get('host')] } })(req, res, next)
+        helmet.contentSecurityPolicy({ directives: { connectSrc: ['\'self\'', `wss://${req.get('host')}`] } })(req, res, next)
     })
 
     app.post('/', async (request, response) => {
