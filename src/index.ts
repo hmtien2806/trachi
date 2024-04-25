@@ -9,6 +9,7 @@ import { Common } from './modules/common'
 import { Market } from './modules/market'
 import { OpenOrders } from './modules/open-orders'
 import { RaydiumSwap } from './modules/raydium/raydium-swap'
+import { RaydiumSniper, serializeSnipeItem } from './modules/raydium/sniper'
 import { RaydiumAmmV4Liquidity } from './modules/raydium/v4/liquidity'
 import { RaydiumAmmV4Pool } from './modules/raydium/v4/pool'
 import { RaydiumAmmV4Vault } from './modules/raydium/v4/vault'
@@ -17,10 +18,13 @@ import { Token } from './modules/token'
 import { createGetBalanceHandler } from './rpc-methods/accounts/get-balance'
 import { createGetTokenAccountsHandler } from './rpc-methods/accounts/get-token-accounts'
 import { createLoginHandler } from './rpc-methods/login'
+import { createAddSnipeOrderHandler } from './rpc-methods/raydium/add-snipe-order'
 import { createFindPoolKeysByPairHandler } from './rpc-methods/raydium/find-pool-keys-by-pair'
 import { createGetPoolKeysHandler } from './rpc-methods/raydium/get-pool-keys'
 import { createGetReservesHandler } from './rpc-methods/raydium/get-reserves'
+import { createGetSnipeOrdersHandler } from './rpc-methods/raydium/get-snipe-orders'
 import { createGetWsolPriceHandler } from './rpc-methods/raydium/get-wsol-price'
+import { createRemoveSnipeOrderHandler } from './rpc-methods/raydium/remove-snipe-order'
 import { createSwapHandler } from './rpc-methods/raydium/swap'
 import { createRegisterHandler } from './rpc-methods/register'
 import { createGetAvailableSendersHandler } from './rpc-methods/sender'
@@ -42,6 +46,7 @@ const raydiumAmmV4Liquidity = new RaydiumAmmV4Liquidity({ pool: raydiumAmmV4Pool
 const swap = new RaydiumSwap(connection, common)
 const senderManager = new SenderManager()
 const token = new Token()
+const sniper = new RaydiumSniper(raydiumAmmV4Liquidity, swap)
 
 const init = async (): Promise<Context> => {
     await market.init()
@@ -51,7 +56,7 @@ const init = async (): Promise<Context> => {
     await account.init()
     await common.init()
 
-    return { common, token, account, market, openOrders, raydiumAmmV4Pool, raydiumAmmV4Vault, raydiumAmmV4Liquidity, swap, senderManager }
+    return { common, token, account, market, openOrders, raydiumAmmV4Pool, raydiumAmmV4Vault, raydiumAmmV4Liquidity, swap, senderManager, sniper }
 }
 
 init().then(async (context) => {
@@ -69,6 +74,9 @@ init().then(async (context) => {
     server.addRpcMethod('raydium_getReserves', createGetReservesHandler())
     server.addRpcMethod('raydium_findPoolKeysByPair', createFindPoolKeysByPairHandler())
     server.addRpcMethod('raydium_getWsolPrice', createGetWsolPriceHandler())
+    server.addRpcMethod('raydium_getSnipeOrders', createGetSnipeOrdersHandler())
+    server.addRpcMethod('raydium_addSnipeOrder', createAddSnipeOrderHandler())
+    server.addRpcMethod('raydium_removeSnipeOrder', createRemoveSnipeOrderHandler())
 
     context.account.balance.on('update', (account, balance) => {
         server.emit(`balance:${account.toString()}`, balance)
@@ -100,7 +108,10 @@ init().then(async (context) => {
 
     context.raydiumAmmV4Pool.on('new', async (pool) => {
         try {
-            server.emit('newPool', toJson(await context.raydiumAmmV4Pool.getPoolKeys(pool)))
+            const poolKeys = await context.raydiumAmmV4Pool.getPoolKeys(pool)
+
+            server.emit('newPool', toJson(poolKeys))
+            sniper.handleNewPool(poolKeys).catch((error) => logger.error(`Failed to snipe pool: ${highlight(poolKeys.id.toString())}`, error))
         } catch (error) {
             logger.error(`Failed to get pool keys: ${highlight(pool.id.toString())}`, error)
         }
@@ -110,11 +121,20 @@ init().then(async (context) => {
         server.emit('wsolPrice', price.toFixed())
     })
 
+    context.sniper.on('new', (key, item) => {
+        server.emit(`snipe-orders:${item.wallet.address.toString()}`, { type: 'new', order: toJson(serializeSnipeItem({ key, ...item })) })
+    })
+
+    context.sniper.on('remove', (key, item) => {
+        server.emit(`snipe-orders:${item.wallet.address.toString()}`, { type: 'remove', order: toJson(serializeSnipeItem({ key, ...item })) })
+    })
+
     server.addEvent('newPool')
     server.addEvent('wsolPrice')
     server.addEvent((name, { wallet }) => isValidName(name, 'balance', (i) => i === wallet.address.toString()))
     server.addEvent((name, { wallet }) => isValidName(name, 'tokenAccounts', (i) => i === wallet.address.toString()))
     server.addEvent((name, { wallet }) => isValidName(name, 'transactions', (i) => i === wallet.address.toString()))
+    server.addEvent((name, { wallet }) => isValidName(name, 'snipe-orders', (i) => i === wallet.address.toString()))
     server.addEvent((name) => isValidName(name, 'reserves', (i) => isPublicKey(i)))
 
     await server.start()
