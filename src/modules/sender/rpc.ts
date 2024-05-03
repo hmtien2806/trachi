@@ -26,7 +26,7 @@ export class Rpc extends Sender {
     }
 
     public async sendTransaction(transaction: VersionedTransaction) {
-        const send = async () => await withRetry(async () => withTimeout(this.connection.sendTransaction(transaction, { skipPreflight: true }), 1000, `Timeout when send transaction to RPC`), this.retries)
+        const send = async () => await withRetry(async () => withTimeout(this.connection.sendTransaction(transaction, { skipPreflight: true, maxRetries: 0, preflightCommitment: this.connection.commitment }), 1000, `Timeout when send transaction to RPC`), this.retries)
 
         return tap(await send(), (signature) => {
             const stop = poll(async () => send().catch((error) => this.logger.error(error)), this.pollingInterval)
