@@ -46,7 +46,7 @@ const raydiumAmmV4Liquidity = new RaydiumAmmV4Liquidity({ pool: raydiumAmmV4Pool
 const swap = new RaydiumSwap(connection, common)
 const senderManager = new SenderManager()
 const token = new Token()
-const sniper = new RaydiumSniper(raydiumAmmV4Liquidity, swap)
+const sniper = new RaydiumSniper(raydiumAmmV4Pool, raydiumAmmV4Liquidity, swap, market)
 
 const init = async (): Promise<Context> => {
     await market.init()

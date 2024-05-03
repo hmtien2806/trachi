@@ -30,6 +30,6 @@ export function createAddSnipeOrderHandler(): RpcMethod {
             throw new JsonRpcError(-32_401, 'Unauthenticated')
         }
 
-        return Promise.resolve().then(() => toJson(serializeSnipeItem(sniper.add({ ...snipeParams, wallet: _wallet, sender: senderManager.get(snipeParams.sender) }))))
+        return sniper.add({ ...snipeParams, wallet: _wallet, sender: senderManager.get(snipeParams.sender) }).then((i) => toJson(serializeSnipeItem(i)))
     }
 }

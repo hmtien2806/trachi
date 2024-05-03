@@ -1,5 +1,7 @@
-import type { Logger } from '@kdt310722/logger'
+import { type Logger, highlight } from '@kdt310722/logger'
 import { Emitter } from '@kdt310722/utils/event'
+import { tap } from '@kdt310722/utils/function'
+import { format } from '@kdt310722/utils/number'
 import { omit } from '@kdt310722/utils/object'
 import { sleep } from '@kdt310722/utils/promise'
 import { Liquidity, type LiquidityPoolInfo, type LiquidityPoolKeysV4, type Percent, TOKEN_PROGRAM_ID, Token, TokenAmount } from '@raydium-io/raydium-sdk'
@@ -7,9 +9,12 @@ import type { PublicKey } from '@solana/web3.js'
 import type BN from 'bn.js'
 import { createChildLogger } from '../../core/logger'
 import type { Wallet } from '../account/common/wallet'
+import type { Market } from '../market'
 import type { Sender } from '../sender/sender'
 import type { RaydiumSwap, SwapParams } from './raydium-swap'
 import type { RaydiumAmmV4Liquidity, Reserves } from './v4/liquidity'
+import type { RaydiumAmmV4Pool } from './v4/pool'
+import { findPools } from './v4/utils/find-pool'
 
 export interface RaydiumSniperItem {
     wallet: Wallet
@@ -42,7 +47,7 @@ export class RaydiumSniper extends Emitter<RaydiumSniperEvents, true> {
     protected readonly logger: Logger
     protected readonly items: Record<string, { id: string, items: RaydiumSniperItem[] }>
 
-    public constructor(protected readonly liquidity: RaydiumAmmV4Liquidity, protected readonly swap: RaydiumSwap) {
+    public constructor(protected readonly pool: RaydiumAmmV4Pool, protected readonly liquidity: RaydiumAmmV4Liquidity, protected readonly swap: RaydiumSwap, protected readonly market: Market) {
         super()
 
         this.logger = createChildLogger('app:modules:raydium:sniper')
@@ -53,9 +58,9 @@ export class RaydiumSniper extends Emitter<RaydiumSniperEvents, true> {
         return Object.entries(this.items).flatMap(([key, i]) => i.items.filter((j) => j.wallet.address.equals(wallet.address)).map((k) => ({ key, ...k })))
     }
 
-    public add({ pair, outputToken: token, ...params }: RaydiumSniperAddParams) {
+    public async add({ pair, outputToken: token, delay = 0, ...params }: RaydiumSniperAddParams) {
         const key = this.getKey(pair)
-        const item = { token, ...params }
+        const item = { token, delay, ...params }
 
         if (!this.items[key]) {
             this.items[key] = { id: key, items: [] }
@@ -63,6 +68,26 @@ export class RaydiumSniper extends Emitter<RaydiumSniperEvents, true> {
 
         if (this.items[key].items.some((i) => i.wallet.address.equals(item.wallet.address))) {
             throw new Error('Snipe order for this pair already exists')
+        }
+
+        const pool = await findPools(pair[0], pair[1], this.pool, this.liquidity, this.market, false).then((pools) => pools.at(0))
+
+        if (pool) {
+            const openTime = pool['openTime'] * 1000
+
+            if (!openTime || openTime <= Date.now()) {
+                throw new Error('Pool already exists')
+            }
+
+            const waitFor = tap(openTime - Date.now() - item.delay, async (wait) => {
+                await Promise.resolve().then(() => this.logger.info(`Waiting for pool ${highlight(pool.id.toString())} to open in ${highlight(format(wait / 1000))} seconds`))
+            })
+
+            item.delay = 0
+
+            sleep(waitFor).then(() => {
+                this.handleNewPool(pool).catch((error) => this.logger.error(error))
+            })
         }
 
         this.items[key].items.push(item)
