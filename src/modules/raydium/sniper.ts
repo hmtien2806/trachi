@@ -1,6 +1,7 @@
 import type { Logger } from '@kdt310722/logger'
 import { Emitter } from '@kdt310722/utils/event'
 import { omit } from '@kdt310722/utils/object'
+import { sleep } from '@kdt310722/utils/promise'
 import { Liquidity, type LiquidityPoolInfo, type LiquidityPoolKeysV4, type Percent, TOKEN_PROGRAM_ID, Token, TokenAmount } from '@raydium-io/raydium-sdk'
 import type { PublicKey } from '@solana/web3.js'
 import type BN from 'bn.js'
@@ -20,6 +21,7 @@ export interface RaydiumSniperItem {
     priorityFee: BN
     tip: BN
     antiMev: boolean
+    delay?: number
 }
 
 export interface RaydiumSniperAddParams extends Omit<RaydiumSniperItem, 'token'> {
@@ -103,6 +105,10 @@ export class RaydiumSniper extends Emitter<RaydiumSniperEvents, true> {
 
         const execute = async (item: RaydiumSniperItem) => {
             this.emit('remove', id, item)
+
+            if (item.delay) {
+                await sleep(item.delay)
+            }
 
             await this.swap.execute(this.getSwapParams(poolKeys, item, reserves)).catch((error) => {
                 this.logger.error(error)

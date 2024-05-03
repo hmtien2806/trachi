@@ -19,6 +19,7 @@ export function createAddSnipeOrderHandler(): RpcMethod {
         priorityFee: z.union([z.string(), z.number()]).transform((i) => new BN(i)),
         tip: z.union([z.string(), z.number()]).transform((i) => new BN(i)),
         antiMev: z.boolean().default(false),
+        delay: z.number().default(0),
     })
 
     return async (params, { account, sniper, senderManager }, wallet) => {
