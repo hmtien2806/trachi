@@ -1,11 +1,11 @@
 {
     "type": "module",
     "private": true,
-    "packageManager": "pnpm@9.0.4",
+    "packageManager": "pnpm@9.0.5",
     "author": "Diep Dang <kdt310722@gmail.com>",
     "license": "UNLICENSED",
     "engines": {
-        "node": ">=20.12.1"
+        "node": ">=20.12.2"
     },
     "scripts": {
         "build": "tsc --noEmit && tsup",
