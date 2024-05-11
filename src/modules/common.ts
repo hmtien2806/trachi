@@ -48,7 +48,7 @@ export class Common {
         const update = async () => {
             const block = await this.connection.getLatestBlockhash('finalized')
 
-            if (this.recentBlock?.blockhash !== block.blockhash) {
+            if (!this.recentBlock || this.recentBlock.lastValidBlockHeight < block.lastValidBlockHeight) {
                 this.recentBlock = block
                 this.logger.debug(message(() => `Updated latest blockhash to ${highlight(this.recentBlock!.blockhash)} (blockheight: ${highlight(highlight(this.recentBlock!.lastValidBlockHeight.toString()))})`))
             }
